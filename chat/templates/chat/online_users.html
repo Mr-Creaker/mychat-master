@@ -1,0 +1,19 @@
+<!-- chat/templates/chat/online_users.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Online Users</title>
+</head>
+<body>
+    <h1>Online Users</h1>
+    <ul>
+        {% for user in online_users %}
+            <li>{{ user }}</li>
+        {% empty %}
+            <li>No users online.</li>
+        {% endfor %}
+    </ul>
+    <p><a href="{% url 'chat' %}">Back to Chat</a></p>
+</body>
+</html>

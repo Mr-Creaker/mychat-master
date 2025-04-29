@@ -1,0 +1,84 @@
+<!-- chat/templates/chat/chat.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Simple Chat</title>
+    <style>
+        #chat-log {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: scroll;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Chat</h1>
+    <div id="chat-log"></div>
+    <input id="chat-message-input" type="text" size="100" placeholder="Type your message...">
+    <button id="chat-message-submit">Send</button>
+
+    <script>
+        // Determine the proper WebSocket protocol.
+        const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+        const chatSocket = new WebSocket(ws_scheme + '://' + window.location.host + '/ws/chat/');
+
+        chatSocket.onopen = function() {
+            console.log("WebSocket connection established.");
+        };
+
+        chatSocket.onerror = function(error) {
+            console.error("WebSocket error:", error);
+        };
+
+        chatSocket.onmessage = function(e) {
+            try {
+                const data = JSON.parse(e.data);
+                const chatLog = document.getElementById('chat-log');
+                if (chatLog) {
+                    const messageElement = document.createElement('p');
+                    messageElement.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
+                    chatLog.appendChild(messageElement);
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                } else {
+                    console.error("Chat log element not found.");
+                }
+            } catch (err) {
+                console.error("Error processing incoming message:", err);
+            }
+        };
+
+        document.getElementById('chat-message-submit').addEventListener('click', function() {
+            const messageInput = document.getElementById('chat-message-input');
+            const message = messageInput.value.trim();
+            if (!message) return;
+            const username = "{{ request.user.username|default:'Anonymous' }}";
+            try {
+                chatSocket.send(JSON.stringify({
+                    'message': message,
+                    'username': username,
+                }));
+                messageInput.value = '';
+            } catch (err) {
+                console.error("Error sending message:", err);
+            }
+        });
+
+        document.getElementById('chat-message-input').addEventListener('keyup', function(e) {
+            if (e.keyCode === 13) {
+                document.getElementById('chat-message-submit').click();
+            }
+        });
+    </script>
+
+    <p>
+        <form id="logout-form" action="{% url 'logout' %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit">Logout</button>
+        </form>
+         | <a href="{% url 'online_users' %}">View Online Users</a>
+    </p>
+</body>
+</html>
